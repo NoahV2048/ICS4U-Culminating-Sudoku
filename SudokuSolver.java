@@ -4,6 +4,7 @@ import java.util.Arrays;
 public class SudokuSolver {
     public static ArrayList<Puzzle> solutions = new ArrayList<>();
     public static int recursionLimit;
+    public static int maxRecursion = 0;
     public static boolean recursionLimitActive = false;
     public static boolean findOnePuzzle = !true;
 
@@ -11,42 +12,33 @@ public class SudokuSolver {
 
         // create puzzle
         int[][] arg = {
-                // {0, 1, 3, 0, 0, 0, 0, 0, 0},
-                // {0, 0, 0, 5, 0, 0, 0, 0, 4},
-                // {5, 0, 0, 0, 2, 7, 0, 0, 3},
-                // {0, 5, 0, 0, 6, 0, 0, 0, 0},
-                // {7, 3, 0, 0, 0, 5, 0, 2, 0},
-                // {9, 0, 0, 0, 0, 0, 0, 0, 0},
-                // {0, 7, 0, 0, 9, 0, 8, 0, 2},
-                // {2, 0, 0, 0, 0, 0, 1, 9, 0},
-                // {0, 0, 0, 0, 1, 0, 0, 0, 0}
 
-                {8, 0, 0, 0, 0, 0, 0, 0, 0},
-                {0, 0, 3, 6, 0, 0, 0, 0, 0},
-                {0, 7, 0, 0, 9, 0, 2, 0, 0}, // 2 0 0
-                {0, 5, 0, 0, 0, 7, 0, 0, 0},
-                {0, 0, 0, 0, 4, 5, 7, 0, 0},
-                {0, 0, 0, 1, 0, 0, 0, 3, 0},
-                {0, 0, 1, 0, 0, 0, 0, 6, 8},
-                {0, 0, 8, 5, 0, 0, 0, 1, 0},
-                {0, 9, 0, 0, 0, 0, 4, 0, 0}
+//                {8, 0, 0, 0, 0, 0, 0, 0, 0},
+//                {0, 0, 3, 6, 0, 0, 0, 0, 0},
+//                {0, 7, 0, 0, 9, 0, 0, 0, 0},
+//                {0, 5, 0, 0, 0, 0, 0, 0, 0},
+//                {0, 0, 0, 0, 4, 0, 7, 0, 0},
+//                {0, 0, 0, 1, 0, 0, 0, 3, 0},
+//                {0, 0, 1, 0, 0, 0, 0, 6, 8},
+//                {0, 0, 8, 5, 0, 0, 0, 1, 0},
+//                {0, 9, 0, 0, 0, 0, 4, 0, 0}
 
-                // {1, 2, 0, 0, 0, 0, 0, 0, 0},
-                // {0, 0, 0, 0, 0, 0, 0, 0, 0},
-                // {0, 0, 0, 0, 0, 0, 0, 0, 0},
-                // {0, 0, 0, 0, 0, 0, 0, 0, 0},
-                // {0, 0, 0, 0, 0, 0, 0, 0, 0},
-                // {0, 0, 0, 0, 0, 0, 0, 0, 0},
-                // {0, 0, 0, 0, 0, 0, 0, 0, 0},
-                // {0, 0, 0, 0, 0, 0, 0, 0, 0},
-                // {0, 0, 0, 0, 0, 0, 0, 0, 0}
+                 {1, 2, 3, 4, 5, 6, 7, 8, 9},
+                 {4, 5, 6, 7, 8, 9, 1, 2, 3},
+                 {7, 8, 9, 1, 2, 3, 4, 5, 6},
+                 {2, 3, 4, 5, 6, 7, 8, 9, 1},
+                 {5, 6, 7, 8, 9, 1, 2, 3, 4},
+                 {0, 0, 0, 0, 0, 0, 0, 0, 0},
+                 {3, 0, 0, 2, 0, 0, 6, 0, 0},
+                 {0, 0, 5, 0, 1, 0, 0, 0, 0},
+                 {0, 0, 0, 0, 0, 0, 0, 1, 0}
 
-                // {0, 0, 0, 0},
-                // {0, 0, 0, 0},
-                // {0, 0, 0, 0},
-                // {0, 0, 0, 0}
+//                 {0, 0, 0, 0},
+//                 {0, 0, 0, 0},
+//                 {0, 0, 0, 0},
+//                 {0, 0, 0, 0}
 
-                // TODO fix plugging in numbers being much faster than doing full recursion
+                // TODO fix plugging in numbers being much faster than doing full recursion KIND OF FIXED ACC
                 // maybe some memoization!
                 // maybe include switch-case somewhere in the Puzzle methods
         };
@@ -60,9 +52,11 @@ public class SudokuSolver {
         recurSolve(sud.getGrid());
         long timeEnd = System.currentTimeMillis();
 
-        System.out.println("Time elapsed: " + (timeEnd - (double) timeStart) / 1000 + " seconds.");
         System.out.println("Recursion limit: " + (recursionLimitActive ? recursionLimit : "no limit"));
         System.out.println("Allow multiple puzzles: " + !findOnePuzzle);
+        System.out.println();
+        System.out.printf("Time elapsed: %.3f seconds%n", (timeEnd - (double) timeStart) / 1000);
+        System.out.println("Max recursive depth: " + maxRecursion);
         System.out.println();
 
         System.out.printf("SOLUTIONS (%d):%n%n", solutions.size());
@@ -83,6 +77,7 @@ public class SudokuSolver {
     public static void recurSolve(int[][] grid, int depth) {
         if (recursionLimitActive && depth > recursionLimit) return; // depth limit
         if (findOnePuzzle && solutions.size() == 1) return; // puzzle limit
+        if (depth > maxRecursion) maxRecursion = depth; // update maxRecursion
 
         Puzzle puzzle = new Puzzle(grid);
 
@@ -103,23 +98,19 @@ public class SudokuSolver {
 
             for (int row = 0; row < size*size; row++) {
                 for (int col = 0; col < size*size; col++) {
-                    if (puzzle.getGrid()[row][col] == 0) { // TODO OPTIMIZE THIS FOR THE SQUARE WITH MINIMUM OPTIONS THAT WILL BE SUPER DUPER FAST
+                    if (puzzle.getGrid()[row][col] == 0) { // TODO OPTIMIZE THIS FOR THE SQUARE WITH MINIMUM OPTIONS THAT WILL BE SUPER DUPER FAST // OR IT MIGHT BE UNNECESSARY
                         for (int i : puzzle.getInvalid(row, col)) {
                             // optimized this step to only operate on valid numbers
+
                             // FIXED MAJOR BUG INVOLVING SHALLOW COPIES
                             // https://www.geeksforgeeks.org/arrays-copyof-in-java-with-examples/
-
-                            // TODO maybe update invalid entries at each step?
                             int[][] newGrid = puzzle.gridCopy();
                             newGrid[row][col] = i;
 
                             // recursive case
                             recurSolve(newGrid, depth + 1); // keep track of depth and increment
-
-                            // experimental TODO --> doing recursion one layer at a time until a solution is found
-                            // recurSolve(newGrid, depth);
                         }
-                        return; // HOLYYYYYYY SHITTTTTT
+                        return; // THIS LINE sped up the program insanely, insanely effectively
                     }
                 }
             }
