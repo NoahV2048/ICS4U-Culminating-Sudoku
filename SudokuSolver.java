@@ -1,80 +1,34 @@
 import java.util.ArrayList;
 import java.util.Arrays;
 
+// TODO maybe some memoization!
+// TODO maybe include switch-case somewhere in the Puzzle methods
+
 public class SudokuSolver {
-    public static ArrayList<Puzzle> solutions = new ArrayList<>();
+    // all must be static for recursive copies to work
+    public static ArrayList<Puzzle> solutions;
     public static int recursionLimit;
-    public static int maxRecursion = 0;
-    public static boolean recursionLimitActive = false;
-    public static boolean findOnePuzzle = !true;
+    public static int maxRecursion;
+    public static boolean recursionLimitActive;
+    public static boolean findOnePuzzle;
 
-    public static void main(String[] args) {
+    public SudokuSolver() {
 
-        // create puzzle
-        int[][] arg = {
-
-//                {8, 0, 0, 0, 0, 0, 0, 0, 0},
-//                {0, 0, 3, 6, 0, 0, 0, 0, 0},
-//                {0, 7, 0, 0, 9, 0, 0, 0, 0},
-//                {0, 5, 0, 0, 0, 0, 0, 0, 0},
-//                {0, 0, 0, 0, 4, 0, 7, 0, 0},
-//                {0, 0, 0, 1, 0, 0, 0, 3, 0},
-//                {0, 0, 1, 0, 0, 0, 0, 6, 8},
-//                {0, 0, 8, 5, 0, 0, 0, 1, 0},
-//                {0, 9, 0, 0, 0, 0, 4, 0, 0}
-
-                 {1, 2, 3, 4, 5, 6, 7, 8, 9},
-                 {4, 5, 6, 7, 8, 9, 1, 2, 3},
-                 {7, 8, 9, 1, 2, 3, 4, 5, 6},
-                 {2, 3, 4, 5, 6, 7, 8, 9, 1},
-                 {5, 6, 7, 8, 9, 1, 2, 3, 4},
-                 {0, 0, 0, 0, 0, 0, 0, 0, 0},
-                 {3, 0, 0, 2, 0, 0, 6, 0, 0},
-                 {0, 0, 5, 0, 1, 0, 0, 0, 0},
-                 {0, 0, 0, 0, 0, 0, 0, 1, 0}
-
-//                 {0, 0, 0, 0},
-//                 {0, 0, 0, 0},
-//                 {0, 0, 0, 0},
-//                 {0, 0, 0, 0}
-
-                // TODO fix plugging in numbers being much faster than doing full recursion KIND OF FIXED ACC
-                // maybe some memoization!
-                // maybe include switch-case somewhere in the Puzzle methods
-        };
-        Puzzle sud = new Puzzle(arg);
-
-        // solve puzzle
-        System.out.println("PUZZLE:\n");
-        System.out.println(sud);
-
-        long timeStart = System.currentTimeMillis();
-        recurSolve(sud.getGrid());
-        long timeEnd = System.currentTimeMillis();
-
-        System.out.println("Recursion limit: " + (recursionLimitActive ? recursionLimit : "no limit"));
-        System.out.println("Allow multiple puzzles: " + !findOnePuzzle);
-        System.out.println();
-        System.out.printf("Time elapsed: %.3f seconds%n", (timeEnd - (double) timeStart) / 1000);
-        System.out.println("Max recursive depth: " + maxRecursion);
-        System.out.println();
-
-        System.out.printf("SOLUTIONS (%d):%n%n", solutions.size());
-
-        if (solutions.size() < 10) {
-            for (Puzzle solution : solutions) {
-                System.out.println(solution);
-            }
-        }
     }
 
-    public static void recurSolve(int[][] grid) {
+    public void recurSolve(int[][] grid) {
+        // reset all this stuff per solve
+        solutions = new ArrayList<>();
+        maxRecursion = 0;
+        recursionLimitActive = false;
+        findOnePuzzle = false;
+
         // TODO use O(n) to determine appropriate recursion depth (but this works pretty well)
         recursionLimit = (int) Math.sqrt(grid.length) - 1;
         recurSolve(grid, 0);
     }
 
-    public static void recurSolve(int[][] grid, int depth) {
+    public void recurSolve(int[][] grid, int depth) {
         if (recursionLimitActive && depth > recursionLimit) return; // depth limit
         if (findOnePuzzle && solutions.size() == 1) return; // puzzle limit
         if (depth > maxRecursion) maxRecursion = depth; // update maxRecursion
@@ -127,12 +81,6 @@ public class SudokuSolver {
             }
         }
 
-        if (addNew) {
-            // debug
-            // System.out.println(puzzle);
-            // System.out.println("Found a solution!");
-
-            solutions.add(puzzle);
-        }
+        if (addNew) solutions.add(puzzle);
     }
 }

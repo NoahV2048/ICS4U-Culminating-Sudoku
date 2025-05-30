@@ -214,7 +214,6 @@ public class Puzzle {
                 if (grid[row][col] != 0 && squareContradiction) return false;
             }
         }
-
         return true; // default case meaning arrangement is valid
     }
 
@@ -322,5 +321,13 @@ public class Puzzle {
         }
 
         return new int[] {maxVal1, maxVal2, ind};
+    }
+
+    public boolean checkZero(int row, int col) {
+        return (grid[row][col] == 0);
+    }
+
+    public void updateSquare(int row, int col, int value) {
+        grid[row][col] = value;
     }
 }
