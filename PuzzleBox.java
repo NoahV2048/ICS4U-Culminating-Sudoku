@@ -6,8 +6,8 @@ public class PuzzleBox extends JFrame {
     // https://youtu.be/Kmgo00avvEw?si=ZAOYPNNYAb-rIGEX
 
     public PuzzleBox(int size) {
-        // create puzzleBox window
 
+        // create puzzleBox window
         this.setTitle("Sudoku Solver");
         this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         this.setSize(500, 500);
@@ -15,8 +15,14 @@ public class PuzzleBox extends JFrame {
         // puzzleBox.setResizable(false);
 
         // create text input
-        for (int i = 0; i < size*size; i++) {
-            this.add(new JTextField());
+        JTextField[][] textFields = new JTextField[size*size][size*size];
+
+        for (int row = 0; row < size*size; row++) {
+            for (int col = 0; col < size*size; col++) {
+                JTextField newTextField = new JTextField();
+                textFields[row][col] = newTextField;
+                this.add(newTextField);
+            }
         }
 
         // create label
