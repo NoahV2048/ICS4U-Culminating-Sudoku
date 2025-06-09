@@ -2,27 +2,52 @@ import java.util.ArrayList;
 import java.util.Arrays;
 
 public class Puzzle {
-    private int[][] grid;
-    private int size;
-    private boolean[][][] invalid;
+    private final int size; // keep grid size final
+    private Square[][] grid;
 
+
+    // Constructors
     public Puzzle(int size) {
         this.size = size;
-        grid = new int[size*size][size*size];
-        invalid = new boolean[size*size][size*size][size*size];
+        grid = new Square[size*size][size*size];
+
+        for (int row = 0; row < size*size; row++) {
+            for (int col = 0; col < size*size; col++) {
+                grid[row][col] = new Square(size);
+            }
+        }
     }
 
-    public Puzzle(int[][] grid) {
+    public Puzzle(Square[][] grid) {
+        // option to create a puzzle by passing a grid
         this.size = (int) Math.sqrt(grid.length);
-        this.grid = grid; // reference!
-        invalid = new boolean[size*size][size*size][size*size];
 
-        // check for valid array
-        for (int[] row : grid) {
+        // make a copy of the grid to avoid referencing issues
+        Square[][] gridCopy = new Square[size*size][size*size];
+        for (int row = 0; row < size*size; row++) {
+            gridCopy[row] = Arrays.copyOf(grid[row], size*size);
+        }
+
+        this.grid = gridCopy;
+
+        // check if array is not a square
+        for (Square[] row : grid) {
             if (row.length != grid.length) throw new Error("Bad grid");
         }
     }
 
+
+    // Getters
+    public int getSize() {
+        return size;
+    }
+
+    public Square[][] getGrid() {
+        return grid;
+    }
+
+
+    // Helpers
     public String toString() {
         StringBuilder output = new StringBuilder();
 
@@ -40,33 +65,16 @@ public class Puzzle {
         return output.toString();
     }
 
-    public int getSize() {
-        return size;
-    }
 
-    public int[][] getGrid() {
-        return grid;
-    }
 
-    public int[][] gridCopy() {
-        // doesn't copy the "invalid" array, but not necessary anyway
 
-        // all this because Arrays.copyOf still uses references for 2D
-        int[][] newGrid = new int[size*size][size*size];
-        for (int row = 0; row < size*size; row++) {
-            newGrid[row] = Arrays.copyOf(grid[row], size*size);
-        }
-        return newGrid;
-    }
 
-    public ArrayList<Integer> getInvalid(int row, int col) {
-        ArrayList<Integer> invalidNums = new ArrayList<>();
 
-        for (int i = 0; i < size*size; i++) {
-            if (!invalid[row][col][i]) invalidNums.add(i+1);
-        }
-        return invalidNums;
-    }
+
+
+
+
+    // TODO reconfigure all puzzle checking methods
 
     public String stringInvalid() {
         StringBuilder output = new StringBuilder();
