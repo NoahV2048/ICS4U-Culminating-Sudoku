@@ -17,6 +17,10 @@ public class Square {
         return value;
     }
 
+    public boolean[] getInvalid() {
+        return invalid;
+    }
+
     public ArrayList<Integer> getValid() {
         ArrayList<Integer> valid = new ArrayList<>();
 

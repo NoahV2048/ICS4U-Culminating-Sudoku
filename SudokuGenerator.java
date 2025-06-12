@@ -46,11 +46,11 @@ public class SudokuGenerator {
 
         for (int row = 0; row < size*size; row++) {
             for (int col = 0; col < size*size; col++) {
-                if (puzzle.checkZero(row, col)) {
+                if (puzzle.getGrid()[row][col].getValue() == 0) {
                     if (index == 0) {
                         // find possible values
 
-                        puzzle.updateSquare(row, col, (random.nextInt(size*size) + 1));
+                        puzzle.getGrid()[row][col].setValue((random.nextInt(size*size) + 1));
                         return;
                     }
                     else index--;
