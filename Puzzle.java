@@ -61,8 +61,10 @@ public class Puzzle {
 
         for (int row = 0; row < size*size; row++) {
             for (int col = 0; col < size*size; col++) {
-                if (grid[row][col].getValue() > 9) output.append((char) (55 + grid[row][col].getValue())); // output letter instead if number is more than one digit
-                else output.append(grid[row][col].getValue());
+                Square square = grid[row][col];
+
+                if (square.getValue() > 9) output.append((char) (55 + square.getValue())); // output letter instead if number is more than one digit
+                else output.append(square.getValue());
 
                 output.append(" ");
                 if (col % size == size-1) output.append(" ");

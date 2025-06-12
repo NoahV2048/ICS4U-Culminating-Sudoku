@@ -34,6 +34,24 @@ public class SudokuSolver {
     }
 
 
+    // Getter methods just for settings
+    public boolean getPuzzleLimitActive() {
+        return puzzleLimitActive;
+    }
+
+    public int getPuzzleLimit() {
+        return puzzleLimit;
+    }
+
+    public boolean getRecursionLimitActive() {
+        return recursionLimitActive;
+    }
+
+    public int getRecursionLimit() {
+        return recursionLimit;
+    }
+
+
     // Misc helper methods
     private void addSolution(Puzzle puzzle) {
         boolean addNew = true;
@@ -68,6 +86,7 @@ public class SudokuSolver {
 
         // fully check and update the puzzle first
         do {
+            updateInvalid(puzzle);
             if (!checkValid(puzzle)) return; // check if current puzzle arrangement is valid, and return if it is not
         } while (updateByElim(puzzle) || updateByNecessity(puzzle)); // update puzzle
 
@@ -82,8 +101,10 @@ public class SudokuSolver {
 
             for (int row = 0; row < size*size; row++) {
                 for (int col = 0; col < size*size; col++) {
-                    if (grid[row][col].getValue() == 0) { // TODO: COULD OPTIMIZE THIS FOR THE SQUARE WITH MINIMUM OPTIONS
-                        for (int i : grid[row][col].getValid()) {
+                    Square square = grid[row][col];
+
+                    if (square.getValue() == 0) { // TODO: COULD OPTIMIZE THIS FOR THE SQUARE WITH MINIMUM OPTIONS
+                        for (int i : square.getValid()) {
                             // this step only operates on valid numbers
 
                             Puzzle newPuzzle = puzzle.copy();
@@ -100,39 +121,64 @@ public class SudokuSolver {
     }
 
 
-    // Dedicated checker methods
+    // Dedicated puzzle checker methods
     private boolean checkValid(Puzzle puzzle) {
         int size = puzzle.getSize();
         Square[][] grid = puzzle.getGrid();
 
+        // iterate and check if each square is valid
         for (int row = 0; row < size*size; row++) {
             for (int col = 0; col < size*size; col++) {
-                int square = grid[row][col] - 1;
+                Square square = grid[row][col];
 
-                if (square != -1) {
+                // make an ArrayList for possible values in the square
+                ArrayList<Integer> possible = square.getValid();
+
+                // if a square cannot be anything, the puzzle is wrong
+                if (possible.isEmpty()) return false;
+
+                // if a square already has an assigned value that is invalid, the puzzle is wrong
+                if (square.getValue() != 0 && !possible.contains(square.getValue())) return false;
+            }
+        }
+        return true; // default case meaning arrangement is valid
+    }
+
+    private void updateInvalid(Puzzle puzzle) {
+        int size = puzzle.getSize();
+        Square[][] grid = puzzle.getGrid();
+
+        // iterate through each square
+        for (int row = 0; row < size*size; row++) {
+            for (int col = 0; col < size*size; col++) {
+                int squareValMinusOne = grid[row][col].getValue()-1;
+
+                // if the square is not empty, let it affect the possibilities of other squares
+                // but leave THIS square value unchanged
+                if (squareValMinusOne != -1) {
+                    // iterate from 1 to size^2 (minus one, for indexing)
                     for (int i = 0; i < size*size; i++) {
-                        // make all other values invalid but leave square value unchanged
-                        // this helps find invalid squares
+                        // for this square, make all values other than itself invalid
+                        if (i != squareValMinusOne) grid[row][col].setInvalid(i, true);
 
-                        // for just this square
-                        if (i != square) grid[row][col].setInvalid(i, true);
+                        // cancel other squares in the same row
+                        if (i != col) grid[row][i].setInvalid(squareValMinusOne, true);
 
-                        // row cancel
-                        if (i != col) invalid[row][i][square] = true;
+                        // cancel other squares in the same col
+                        if (i != row) grid[i][col].setInvalid(squareValMinusOne, true);
 
-                        // col cancel
-                        if (i != row) invalid[i][col][square] = true;
-
-                        // box cancel
-                        int refy = (row / size) * size, refx = (col / size) * size;
-                        if ((refy + i / size) != row && (refx + i % size) != col) {
-                            invalid[refy + i / size][refx + i % size][square] = true;
-                        }
+                        // cancel other squares in the same box
+                        int macroRow = (row / size) * size, macroCol = (col / size) * size; // TODO make this implementation standard in other spots (maybe other files)
+                        int boxRow = macroRow + i / size, boxCol = macroCol + i % size;
+                        if (boxRow != row && boxCol != col) grid[boxRow][boxCol].setInvalid(squareValMinusOne, true);
                     }
                 }
             }
         }
+    }
 
+    // deprecated function that only makes checking slower
+    private void updateInvalid2() {
         // possibilities restricting other possibilities in BOXES
 
         // example where 1 must be in either spot, blocking off the row
@@ -183,50 +229,6 @@ public class SudokuSolver {
         //         }
         //     }
         // }
-
-        for (int i = 0; i < size*size; i++) {
-            for (int num = 0; num < size*size; num++) {
-                ArrayList<Integer> rowCheck = new ArrayList<>();
-                ArrayList<Integer> colCheck = new ArrayList<>();
-                ArrayList<Integer> boxCheck = new ArrayList<>();
-
-                for (int j = 0; j < size*size; j++) {
-                    // row
-                    if (!invalid[i][j][num]) rowCheck.add(j);
-
-                    // col
-                    if (!invalid[j][i][num]) colCheck.add(j);
-
-                    // box
-                    int refy = (i / size) * size, refx = (i % size) * size;
-                }
-            }
-        } // TODO something here?
-
-        // solvable check
-        for (int row = 0; row < size*size; row++) {
-            for (int col = 0; col < size*size; col++) {
-                // check if unsolvable
-                boolean squareContradiction = true;
-
-                // make ArrayList for possible values
-                ArrayList<Integer> possible = new ArrayList<>();
-                for (int i = 0; i < size*size; i++) {
-                    if (!invalid[row][col][i]) {
-                        possible.add(i+1);
-
-                        if (i+1 == grid[row][col]) squareContradiction = false; // row can be what it already is (good!)
-                    }
-                }
-
-                // obvious unsolvable case
-                if (possible.size() == 0) return false;
-
-                // whole arrangement is invalid because number disagrees with possible values
-                if (grid[row][col] != 0 && squareContradiction) return false;
-            }
-        }
-        return true; // default case meaning arrangement is valid
     }
 
     private boolean updateByElim(Puzzle puzzle) {
@@ -238,12 +240,15 @@ public class SudokuSolver {
         // iterate through all squares
         for (int row = 0; row < size*size; row++) {
             for (int col = 0; col < size*size; col++) {
-                if (grid[row][col].getValue() != 0) continue; // operate on a square if it is not yet filled in
+                Square square = grid[row][col];
 
-                ArrayList<Integer> possible = grid[row][col].getValid(); // get possible values
+                if (square.getValue() != 0) continue; // operate on a square if it is not yet filled in
 
+                ArrayList<Integer> possible = square.getValid(); // get possible values
+
+                // update the grid
                 if (possible.size() == 1) {
-                    grid[row][col].setValue(possible.getFirst()); // if only one possible value, it must be that value
+                    square.setValue(possible.getFirst()); // if only one possible value, it must be that value
                     actionTaken = true; // an action was taken, so the call to this method was not useless
                 }
             }
@@ -260,38 +265,47 @@ public class SudokuSolver {
         // iterate through all rows, cols, and boxes
         for (int i = 0; i < size*size; i++) {
             for (int num = 0; num < size*size; num++) {
+                // create ArrayLists for each subsection type
                 ArrayList<Integer> rowCheck = new ArrayList<>();
                 ArrayList<Integer> colCheck = new ArrayList<>();
                 ArrayList<Integer> boxCheck = new ArrayList<>();
 
                 // i is primary, j is secondary for iteration (not strictly rows and cols in this context)
+                // num is the number to check between 1 to size^2 (minus one for iteration)
                 for (int j = 0; j < size*size; j++) {
-                    // row
-                    if (!invalid[i][j][num]) rowCheck.add(j);
+                    // check how many squares in this row have "num" as valid
+                    if (!grid[i][j].getInvalid()[num]) rowCheck.add(j);
 
-                    // col
-                    if (!invalid[j][i][num]) colCheck.add(j);
+                    // check how many squares in this col have "num" as valid
+                    if (!grid[j][i].getInvalid()[num]) colCheck.add(j);
 
-                    // box
-                    int refy = (i / size) * size, refx = (i % size) * size;
-                    if (!invalid[refy + j / size][refx + j % size][num]) boxCheck.add(j);
+                    // check how many squares in this box have "num" as valid
+                    int macroRow = (i / size) * size, macroCol = (i % size) * size; // box is more complex to iterate through than row and col, so temp values are used
+                    if (!grid[macroRow + j / size][macroCol + j % size].getInvalid()[num]) boxCheck.add(j);
                 }
 
-                // UPDATES!
-                if (rowCheck.size() == 1 && grid[i][rowCheck.get(0)] == 0) {
-                    grid[i][rowCheck.get(0)] = num+1;
+                // update the grid
+
+                // if only one square in the row can be "num" then "num" must go in that square
+                if (rowCheck.size() == 1 && grid[i][rowCheck.getFirst()].getValue() == 0) {
+                    grid[i][rowCheck.getFirst()].setValue(num+1);
                     actionTaken = true;
                 }
-                if (colCheck.size() == 1 && grid[colCheck.get(0)][i] == 0) {
-                    grid[colCheck.get(0)][i] = num+1;
+
+                // if only one square in the col can be "num" then "num" must go in that square
+                if (colCheck.size() == 1 && grid[colCheck.getFirst()][i].getValue() == 0) {
+                    grid[colCheck.getFirst()][i].setValue(num+1);
                     actionTaken = true;
                 }
+
+                // if only one square in the box can be "num" then "num" must go in that square
                 if (boxCheck.size() == 1) {
-                    int j = boxCheck.get(0);
-                    int refy = (i / size) * size, refx = (i % size) * size;
+                    int j = boxCheck.getFirst();
+                    int macroRow = (i / size) * size, macroCol = (i % size) * size;
 
-                    if (grid[refy + j / size][refx + j % size] == 0) {
-                        grid[refy + j / size][refx + j % size] = num+1;
+                    // use nested if instead of && because the box iteration is more complex
+                    if (grid[macroRow + j / size][macroCol + j % size].getValue() == 0) {
+                        grid[macroRow + j / size][macroCol + j % size].setValue(num+1);
                         actionTaken = true;
                     }
                 }

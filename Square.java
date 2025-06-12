@@ -38,7 +38,7 @@ public class Square {
         value = num;
     }
 
-    public void setInvalid(int num, boolean isInvalid) {
-        invalid[num-1] = isInvalid;
+    public void setInvalid(int index, boolean isInvalid) {
+        invalid[index] = isInvalid;
     }
 }
