@@ -7,37 +7,47 @@ public class SwingPuzzle extends JFrame {
 
     int size;
     int pixelSize = 450;
-    SwingSquare[][] squareValues;
+    public SwingSquare[][] squareValues;
 
 
     // Constructor
     public SwingPuzzle(int size) {
         this.size = size;
         setTitle("Sudoku Solver");
-        setSize(pixelSize, pixelSize);
+        setSize(pixelSize, pixelSize * 4/3);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setResizable(false); // can be toggled TODO
+
+        // MASTER CONFIGURATION
+        JPanel masterPanel = new JPanel();
+        add(masterPanel);
+        masterPanel.setLayout(new GridLayout(3, 1)); // grid layout
+        masterPanel.setSize(pixelSize, pixelSize * 4/3);
+
+
+        // TOP CONFIGURATION
+        JPanel topPanel = new JPanel();
+        masterPanel.add(topPanel);
+        topPanel.setSize(pixelSize, pixelSize/6);
 
         // create title at top of program
         JLabel title = new JLabel("SUDOKU SOLVER");
         title.setVerticalAlignment(JLabel.TOP);
         title.setHorizontalAlignment(JLabel.CENTER);
-        add(title);
+        topPanel.add(title);
+
+
+        // PUZZLE CONFIGURATION
 
         // make layouts
-        GridLayout macroLayout = new GridLayout(size, size); // macro
-        macroLayout.setHgap(pixelSize/100);
-        macroLayout.setVgap(pixelSize/100);
-
-        GridLayout microLayout = new GridLayout(size, size); // micro
-        microLayout.setHgap(1);
-        microLayout.setVgap(1);
+        GridLayout macroLayout = new GridLayout(size, size, pixelSize/100, pixelSize/100); // macro
+        GridLayout microLayout = new GridLayout(size, size, 1, 1); // micro
 
         // create panel for the whole puzzle
         JPanel puzzlePanel = new JPanel();
-        add(puzzlePanel);
+        masterPanel.add(puzzlePanel);
         puzzlePanel.setLayout(macroLayout); // grid layout
-        puzzlePanel.setSize(pixelSize/size, pixelSize/size); // TODO see if doubles work
+        puzzlePanel.setSize(pixelSize/size, pixelSize/size);
 
         // create smaller panels inside the main puzzle panel
         JPanel[][] boxPanels = new JPanel[size][size];
@@ -67,6 +77,13 @@ public class SwingPuzzle extends JFrame {
                 boxPanels[macroRow][macroCol].add(newSwingSquare);
             }
         }
+
+
+        // BOTTOM CONFIGURATION
+        JPanel bottomPanel = new JPanel();
+        masterPanel.add(bottomPanel); // TODO problems with master rn
+        bottomPanel.setSize(pixelSize, pixelSize/6);
+
 
         // create image TODO
         // ImageIcon image = new ImageIcon("SudokuSolverLogo.png");
