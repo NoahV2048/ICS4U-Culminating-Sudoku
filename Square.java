@@ -1,7 +1,7 @@
 import java.util.ArrayList;
 
 public class Square {
-    private boolean[] invalid;
+    private final boolean[] invalid;
     private int value;
 
 
@@ -40,5 +40,21 @@ public class Square {
 
     public void setInvalid(int index, boolean isInvalid) {
         invalid[index] = isInvalid;
+    }
+
+
+    // Helper methods
+    public static Square[][] intsToSquares(int[][] intGrid) {
+        int size = (int) Math.sqrt(intGrid.length);
+        Square[][] newSquareGrid = new Square[size*size][size*size];
+
+        // change each cell from int to Square object
+        for (int row = 0; row < size*size; row++) {
+            for (int col = 0; col < size*size; col++) {
+                newSquareGrid[row][col] = new Square(size);
+                newSquareGrid[row][col].setValue(intGrid[row][col]);
+            }
+        }
+        return newSquareGrid;
     }
 }

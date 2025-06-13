@@ -1,9 +1,8 @@
-import java.util.ArrayList;
 import java.util.Arrays;
 
 public class Puzzle {
     private final int size; // keep grid size final
-    private Square[][] grid;
+    private final Square[][] grid;
 
 
     // Constructor methods

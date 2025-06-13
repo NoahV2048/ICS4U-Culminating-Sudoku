@@ -1,5 +1,6 @@
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Set;
 
 // TODO maybe include switch-case somewhere in the Puzzle methods
 
@@ -88,7 +89,7 @@ public class SudokuSolver {
         do {
             updateInvalid(puzzle);
             if (!checkValid(puzzle)) return; // check if current puzzle arrangement is valid, and return if it is not
-        } while (updateByElim(puzzle) || updateByNecessity(puzzle)); // update puzzle
+        } while (updateByElimination(puzzle) || updateByNecessity(puzzle)); // update puzzle
 
         // now operate on the updated puzzle
         if (puzzle.isComplete()) {
@@ -99,23 +100,47 @@ public class SudokuSolver {
             int size = puzzle.getSize();
             Square[][] grid = puzzle.getGrid();
 
+            HashMap<int[], ArrayList<Integer>> possibilities = new HashMap<>();
+
+            // iterate through every square and update the number of possibilities in the above hashmap
             for (int row = 0; row < size*size; row++) {
                 for (int col = 0; col < size*size; col++) {
                     Square square = grid[row][col];
 
-                    if (square.getValue() == 0) { // TODO: COULD OPTIMIZE THIS FOR THE SQUARE WITH MINIMUM OPTIONS
-                        for (int i : square.getValid()) {
-                            // this step only operates on valid numbers
-
-                            Puzzle newPuzzle = puzzle.copy();
-                            newPuzzle.getGrid()[row][col].setValue(i); // assume a square is filled in as one possible value
-
-                            // recursive case
-                            recurSolve(newPuzzle, depth + 1); // keep track of recursion depth and increment
-                        }
-                        return; // the magic line that makes things a billion times faster
+                    if (square.getValue() == 0) {
+                        possibilities.put(new int[] {row, col}, square.getValid());
                     }
                 }
+            }
+
+            // use a sorting algorithm here to find the "best" square with minimum possibilities // TODO TODO TODO
+            // not strictly necessary, but it fit the rubric criteria well
+
+            Set<int[]> keySet = possibilities.keySet();
+
+            int setSize = keySet.size();
+            int[][] unsorted = new int[setSize][2];
+            unsorted = keySet.toArray(unsorted);
+
+            if (unsorted.length == 0) return; // if no possibilities for anything, exit
+
+            int[] squareWithLeastOptions = unsorted[0];
+
+            // iterate TODO explain this better tmrw
+            for (int[] squareCoord : unsorted) {
+                // if fewer possibilities for another square than current min, make that square the new min
+                if (possibilities.get(squareCoord).size() < possibilities.get(squareWithLeastOptions).size()) squareWithLeastOptions = squareCoord;
+            }
+
+            for (int i : possibilities.get(squareWithLeastOptions)) {
+                // this step only operates on possible numbers of a square
+
+                // assume a square is filled in as one possible value and continue from there
+                Puzzle newPuzzle = puzzle.copy();
+                newPuzzle.getGrid()[squareWithLeastOptions[0]][squareWithLeastOptions[1]].setValue(i);
+
+                // recursive call
+                recurSolve(newPuzzle, depth + 1); // keep track of recursion depth and increment
             }
         }
     }
@@ -145,6 +170,8 @@ public class SudokuSolver {
     }
 
     private void updateInvalid(Puzzle puzzle) {
+        // there is another type of update that could weed out some more invalid options, but the algorithm is faster without it
+
         int size = puzzle.getSize();
         Square[][] grid = puzzle.getGrid();
 
@@ -168,7 +195,7 @@ public class SudokuSolver {
                         if (i != row) grid[i][col].setInvalid(squareValMinusOne, true);
 
                         // cancel other squares in the same box
-                        int macroRow = (row / size) * size, macroCol = (col / size) * size; // TODO make this implementation standard in other spots (maybe other files)
+                        int macroRow = (row / size) * size, macroCol = (col / size) * size;
                         int boxRow = macroRow + i / size, boxCol = macroCol + i % size;
                         if (boxRow != row && boxCol != col) grid[boxRow][boxCol].setInvalid(squareValMinusOne, true);
                     }
@@ -177,61 +204,7 @@ public class SudokuSolver {
         }
     }
 
-    // deprecated function that only makes checking slower
-    private void updateInvalid2() {
-        // possibilities restricting other possibilities in BOXES
-
-        // example where 1 must be in either spot, blocking off the row
-        // 11->
-        // 0000
-        // 0000
-        // 0000
-
-        // TODO: THIS WHOLE STEP MIGHT ACTUALLY MAKE THINGS SLOWER
-
-        // for (int boxRow = 0; boxRow < size; boxRow++) {
-        //     for (int boxCol = 0; boxCol < size; boxCol++) {
-        //         int[][] rows = new int[size*size][size];
-        //         int[][] cols = new int[size*size][size];
-
-        //         for (int miniRow = 0; miniRow < size; miniRow++) {
-        //             for (int miniCol = 0; miniCol < size; miniCol++) {
-        //                 for (int i = 0; i < size*size; i++) {
-        //                     if (!invalid[boxRow*size+miniRow][boxCol*size+miniCol][i]) {
-        //                         rows[i][miniRow]++;
-        //                         cols[i][miniCol]++;
-        //                     }
-        //                 }
-        //             }
-        //         }
-
-        //         for (int i = 0; i < size*size; i++) {
-        //             int[] rowIndices = topTwo(rows[i]); // selection sort-ish operation
-        //             int[] colIndices = topTwo(cols[i]); // returns [val1, val2, ind1]
-
-        //             // row conditions
-        //             if (rowIndices[0] > 1 && rowIndices[1] == 0) { // means one row has multiple of a number and others have none
-        //                 int rowToUpdate = rowIndices[2] + boxRow*size;
-
-        //                 for (int shift = 1; shift < size*(size-1); shift++) {
-        //                     invalid[rowToUpdate][((boxCol+1)*size + shift) % size*size][i] = false; // update
-        //                 }
-        //             }
-
-        //             // col conditions
-        //             if (colIndices[0] > 1 && colIndices[1] == 0) { // means one col has multiple of a number and others have none
-        //                 int colToUpdate = colIndices[2] + boxCol*size;
-
-        //                 for (int shift = 1; shift < size*(size-1); shift++) {
-        //                     invalid[((boxRow+1)*size + shift) % size*size][colToUpdate][i] = false; // update
-        //                 }
-        //             }
-        //         }
-        //     }
-        // }
-    }
-
-    private boolean updateByElim(Puzzle puzzle) {
+    private boolean updateByElimination(Puzzle puzzle) {
         int size = puzzle.getSize();
         Square[][] grid = puzzle.getGrid();
 
@@ -270,7 +243,7 @@ public class SudokuSolver {
                 ArrayList<Integer> colCheck = new ArrayList<>();
                 ArrayList<Integer> boxCheck = new ArrayList<>();
 
-                // i is primary, j is secondary for iteration (not strictly rows and cols in this context)
+                // iteration using i and j (not strictly rows and cols in this context)
                 // num is the number to check between 1 to size^2 (minus one for iteration)
                 for (int j = 0; j < size*size; j++) {
                     // check how many squares in this row have "num" as valid
@@ -281,7 +254,8 @@ public class SudokuSolver {
 
                     // check how many squares in this box have "num" as valid
                     int macroRow = (i / size) * size, macroCol = (i % size) * size; // box is more complex to iterate through than row and col, so temp values are used
-                    if (!grid[macroRow + j / size][macroCol + j % size].getInvalid()[num]) boxCheck.add(j);
+                    int boxRow = macroRow + j / size, boxCol = macroCol + j % size;
+                    if (!grid[boxRow][boxCol].getInvalid()[num]) boxCheck.add(j);
                 }
 
                 // update the grid
@@ -302,10 +276,11 @@ public class SudokuSolver {
                 if (boxCheck.size() == 1) {
                     int j = boxCheck.getFirst();
                     int macroRow = (i / size) * size, macroCol = (i % size) * size;
+                    int boxRow = macroRow + j / size, boxCol = macroCol + j % size;
 
                     // use nested if instead of && because the box iteration is more complex
-                    if (grid[macroRow + j / size][macroCol + j % size].getValue() == 0) {
-                        grid[macroRow + j / size][macroCol + j % size].setValue(num+1);
+                    if (grid[boxRow][boxCol].getValue() == 0) {
+                        grid[boxRow][boxCol].setValue(num+1);
                         actionTaken = true;
                     }
                 }
