@@ -7,19 +7,15 @@ public class SudokuSolver {
     private int maxRecursion;
 
     // hardcoded settings
-    private final int recursionLimit;
-    private final boolean recursionLimitActive;
-    private final int puzzleLimit;
-    private final boolean puzzleLimitActive;
+    private static final int recursionLimit = 1;
+    private static final boolean recursionLimitActive = false;
+    private static int puzzleLimit = 10;
+    private static final boolean puzzleLimitActive = true;
 
 
     // Constructor method
     public SudokuSolver() {
-        // initialize some hardcoded settings
-        puzzleLimitActive = true;
-        puzzleLimit = 10; // dangerous to put this very high
-        recursionLimitActive = false;
-        recursionLimit = -1; // recursionLimit could be based on puzzle size, but the limit is not rly necessary in practice
+        // hardcoded settings already initialized so nothing to do here
     }
 
 
@@ -48,6 +44,12 @@ public class SudokuSolver {
 
     public int getRecursionLimit() {
         return recursionLimit;
+    }
+
+
+    // Setter method for easier manipulation in Main
+    public static void setSolutionLimit(int lim) {
+        puzzleLimit = lim;
     }
 
 

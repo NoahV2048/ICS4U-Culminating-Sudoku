@@ -16,10 +16,12 @@ public class SwingPuzzle extends JFrame {
 
     int size;
     int displayedSolutionIndex = -1;
+    boolean outputAsNewFile = false; // hardcoded so toggle here (changes file output)
+    JLabel solutionNumber;
     ArrayList<Puzzle> solutions;
 
     // display settings
-    int windowWidth = 500;
+    int windowSize = 500;
     int displayRatio = 10;
     public SwingSquare[][] squareValues;
 
@@ -27,7 +29,7 @@ public class SwingPuzzle extends JFrame {
     // Constructor
     public SwingPuzzle(int size) {
         this.size = size;
-        int realPuzzleSize = windowWidth + (size-2) * (windowWidth /100) + (size*size-2);
+        int realPuzzleSize = windowSize + (size-2) * (windowSize /100) + (size*size-2);
 
         // FRAME CONFIGURATION
         setTitle("Sudoku Solver");
@@ -41,24 +43,18 @@ public class SwingPuzzle extends JFrame {
         topPanel.setBounds(0, 0, realPuzzleSize, realPuzzleSize/displayRatio);
         add(topPanel);
 
-        // create title at top of program
-        JLabel title = new JLabel("SUDOKU SOLVER");
-        title.setVerticalAlignment(JLabel.TOP);
-        title.setHorizontalAlignment(JLabel.CENTER);
-        topPanel.add(title);
-
 
         // PUZZLE CONFIGURATION
 
         // make layouts
-        GridLayout macroLayout = new GridLayout(size, size, windowWidth/100, windowWidth/100); // macro
+        GridLayout macroLayout = new GridLayout(size, size, windowSize /100, windowSize /100); // macro
         GridLayout microLayout = new GridLayout(size, size, 1, 1); // micro
 
         // create panel for the whole puzzle
         JPanel puzzlePanel = new JPanel();
         add(puzzlePanel);
         puzzlePanel.setLayout(macroLayout); // grid layout
-        puzzlePanel.setBounds(0, realPuzzleSize/displayRatio, windowWidth, windowWidth);
+        puzzlePanel.setBounds(0, realPuzzleSize/displayRatio, windowSize, windowSize);
 
         // create smaller panels inside the main puzzle panel
         JPanel[][] boxPanels = new JPanel[size][size];
@@ -67,7 +63,7 @@ public class SwingPuzzle extends JFrame {
                 // create smaller panels
                 JPanel boxPanel = new JPanel();
                 boxPanel.setLayout(microLayout); // micro grid layout
-                boxPanel.setSize(windowWidth /(size*size), windowWidth /(size*size));
+                boxPanel.setSize(windowSize /(size*size), windowSize /(size*size));
                 puzzlePanel.add(boxPanel); // add each smaller panel to the larger one
                 boxPanels[macroRow][macroCol] = boxPanel;
             }
@@ -92,7 +88,7 @@ public class SwingPuzzle extends JFrame {
 
         // BOTTOM CONFIGURATION
         JPanel bottomPanel = new JPanel();
-        bottomPanel.setBounds(0, windowWidth * (displayRatio+1)/displayRatio, windowWidth, windowWidth /(2*displayRatio));
+        bottomPanel.setBounds(0, windowSize * (displayRatio+1)/displayRatio, windowSize, windowSize /(2*displayRatio));
         add(bottomPanel);
 
         // add SOLVE button
@@ -103,30 +99,6 @@ public class SwingPuzzle extends JFrame {
             public void actionPerformed(ActionEvent event) {
                 // solve
                 solve();
-
-                // // output solutions to a file
-                // LocalDateTime now = LocalDateTime.now();
-                // DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss");
-                // String timestamp = now.format(formatter);
-                // String reportFileName = "output/solutions_" + timestamp + ".txt";
-                //
-                // PrintWriter writer = null;
-                // try {
-                //     writer = new PrintWriter(reportFileName);
-                //     writer.println("=== Sudoku Solutions ===");
-                //     writer.println("Generated on: " + now);
-                //
-                //     for (Puzzle solution : solutions) {
-                //         writer.println(solution);
-                //     }
-                // } catch (FileNotFoundException e) {
-                //     throw new RuntimeException(e);
-                // }
-                // finally {
-                //     if (writer == null) {
-                //         writer.close();
-                //     }
-                // }
             }
         } );
 
@@ -135,7 +107,7 @@ public class SwingPuzzle extends JFrame {
         topPanel.add(resetButton); // add to top
         resetButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent event) {
-                // solve
+                // reset
                 reset();
             }
         } );
@@ -149,12 +121,12 @@ public class SwingPuzzle extends JFrame {
 
         prevButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent event) {
+                // try decrementing
                 displayedSolutionIndex--;
 
                 try {
-                    updateArray(solutions.get(displayedSolutionIndex));
-                }
-                catch (Exception e) {
+                    updateSolutionDisplay();
+                } catch (Exception e) {
                     displayedSolutionIndex++;
                 }
             }
@@ -162,16 +134,20 @@ public class SwingPuzzle extends JFrame {
 
         nextButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent event) {
+                // try incrementing
                 displayedSolutionIndex++;
 
                 try {
-                    updateArray(solutions.get(displayedSolutionIndex));
-                }
-                catch (Exception e) {
+                    updateSolutionDisplay();
+                } catch (Exception e) {
                     displayedSolutionIndex--;
                 }
             }
         } );
+
+        // add counter for solution number
+        solutionNumber = new JLabel();
+        topPanel.add(solutionNumber);
 
         // finally, set the frame visible
         setVisible(true);
@@ -179,7 +155,7 @@ public class SwingPuzzle extends JFrame {
 
 
     // Getters
-    public Square[][] toArray() {
+    private Square[][] toArray() {
         int[][] tempIntArray = new int[size*size][size*size];
 
         // iterate through squares
@@ -202,7 +178,7 @@ public class SwingPuzzle extends JFrame {
 
 
     // Setters
-    public void updateArray(Puzzle puzzle) {
+    private void updateArray(Puzzle puzzle) {
         Square[][] grid = puzzle.getGrid();
 
         // iterate through squares
@@ -216,11 +192,17 @@ public class SwingPuzzle extends JFrame {
 
 
     // Helpers
-    public void reset() {
-        updateArray(new Puzzle(size));
+    private void updateSolutionDisplay() {
+        updateArray(solutions.get(displayedSolutionIndex));
+        solutionNumber.setText("Solution " + (displayedSolutionIndex+1) + "/" + solutions.size());
     }
 
-    public void solve() {
+    private void reset() {
+        updateArray(new Puzzle(size));
+        solutionNumber.setText("");
+    }
+
+    private void solve() {
         // initialize Sudoku solver
         SudokuSolver solver = new SudokuSolver();
 
@@ -242,23 +224,40 @@ public class SwingPuzzle extends JFrame {
         System.out.printf("Time elapsed: %.3f seconds%n", (timeEnd - (double) timeStart) / 1000);
         System.out.println("Max recursive depth: " + solver.getMaxRecursion());
 
-        // print up to the first ten solutions
+        // see if any solutions were found
         solutions = solver.getSolutions();
-        System.out.printf("%nSOLUTIONS (%d):%n%n", solutions.size());
+        System.out.printf("%n%d SOLUTIONS WERE FOUND%n%n", solutions.size());
 
-        if (solutions.size() <= 10) {
-            for (Puzzle solution : solutions) {
-                System.out.println(solution);
-            }
-        }
-
-        // finally, update the SwingPuzzle if there are solutions
+        // return if no solutions were found
         if (solutions.isEmpty()) {
             displayedSolutionIndex = -1;
             return;
         }
 
+        // update the SwingPuzzle if there are solutions
         displayedSolutionIndex = 0;
-        updateArray(solutions.getFirst());
+        updateSolutionDisplay();
+
+        // lastly, output solutions to a file
+        String fileName;
+        LocalDateTime now = LocalDateTime.now();
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss");
+        String timestamp = now.format(formatter);
+
+        if (outputAsNewFile) fileName = "output/solutions_" + timestamp + ".txt";
+        else fileName = "output/mostRecentSolutions.txt";
+
+        // use PrintWriter
+        try (PrintWriter writer = new PrintWriter(fileName))  {
+            writer.println("=== Sudoku Solutions ===");
+            writer.println("Number of solutions: " + solutions.size());
+            writer.println("Generated on: " + now + "\n\n");
+
+            for (Puzzle solution : solutions) {
+                writer.println(solution);
+            }
+        } catch (FileNotFoundException e) {
+            throw new RuntimeException(e);
+        }
     }
 }
