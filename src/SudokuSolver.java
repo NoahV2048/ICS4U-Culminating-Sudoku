@@ -1,8 +1,6 @@
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Set;
+package src;
 
-// TODO maybe include switch-case somewhere in the Puzzle methods
+import java.util.ArrayList;
 
 public class SudokuSolver {
     private ArrayList<Puzzle> solutions;
@@ -18,8 +16,8 @@ public class SudokuSolver {
     // Constructor method
     public SudokuSolver() {
         // initialize some hardcoded settings
-        puzzleLimitActive = false;
-        puzzleLimit = 1;
+        puzzleLimitActive = true;
+        puzzleLimit = 10; // dangerous to put this very high
         recursionLimitActive = false;
         recursionLimit = -1; // recursionLimit could be based on puzzle size, but the limit is not rly necessary in practice
     }
@@ -100,47 +98,24 @@ public class SudokuSolver {
             int size = puzzle.getSize();
             Square[][] grid = puzzle.getGrid();
 
-            HashMap<int[], ArrayList<Integer>> possibilities = new HashMap<>();
-
-            // iterate through every square and update the number of possibilities in the above hashmap
+            // iterate through each square in the grid
             for (int row = 0; row < size*size; row++) {
                 for (int col = 0; col < size*size; col++) {
                     Square square = grid[row][col];
 
+                    // but only operate on the first Square that has multiple possibilities
                     if (square.getValue() == 0) {
-                        possibilities.put(new int[] {row, col}, square.getValid());
+                        // try every possible value of the square
+                        for (int i : square.getValid()) {
+                            Puzzle newPuzzle = puzzle.copy();
+                            newPuzzle.getGrid()[row][col].setValue(i); // assume a square is filled in as one possible value and continue from there
+
+                            // recursive call
+                            recurSolve(newPuzzle, depth + 1); // keep track of recursion depth and increment
+                        }
+                        return; // magic return statement
                     }
                 }
-            }
-
-            // use a sorting algorithm here to find the "best" square with minimum possibilities // TODO TODO TODO
-            // not strictly necessary, but it fit the rubric criteria well
-
-            Set<int[]> keySet = possibilities.keySet();
-
-            int setSize = keySet.size();
-            int[][] unsorted = new int[setSize][2];
-            unsorted = keySet.toArray(unsorted);
-
-            if (unsorted.length == 0) return; // if no possibilities for anything, exit
-
-            int[] squareWithLeastOptions = unsorted[0];
-
-            // iterate TODO explain this better tmrw
-            for (int[] squareCoord : unsorted) {
-                // if fewer possibilities for another square than current min, make that square the new min
-                if (possibilities.get(squareCoord).size() < possibilities.get(squareWithLeastOptions).size()) squareWithLeastOptions = squareCoord;
-            }
-
-            for (int i : possibilities.get(squareWithLeastOptions)) {
-                // this step only operates on possible numbers of a square
-
-                // assume a square is filled in as one possible value and continue from there
-                Puzzle newPuzzle = puzzle.copy();
-                newPuzzle.getGrid()[squareWithLeastOptions[0]][squareWithLeastOptions[1]].setValue(i);
-
-                // recursive call
-                recurSolve(newPuzzle, depth + 1); // keep track of recursion depth and increment
             }
         }
     }

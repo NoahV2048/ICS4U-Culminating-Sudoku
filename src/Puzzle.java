@@ -1,4 +1,4 @@
-import java.util.Arrays;
+package src;
 
 public class Puzzle {
     private final int size; // keep grid size final
@@ -23,10 +23,13 @@ public class Puzzle {
 
         // make a copy of the grid to avoid referencing issues
         Square[][] gridCopy = new Square[size*size][size*size];
+
+        // loop to avoid shallow copies
+        // https://www.geeksforgeeks.org/arrays-copyof-in-java-with-examples/
         for (int row = 0; row < size*size; row++) {
-            // loop to avoid shallow copies
-            // https://www.geeksforgeeks.org/arrays-copyof-in-java-with-examples/
-            gridCopy[row] = Arrays.copyOf(grid[row], size*size);
+            for (int col = 0; col < size*size; col++) {
+                gridCopy[row][col] = grid[row][col].copy();
+            }
         }
 
         this.grid = gridCopy;

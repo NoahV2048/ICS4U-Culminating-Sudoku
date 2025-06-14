@@ -1,14 +1,22 @@
+package src;
+
 import java.util.ArrayList;
+import java.util.Arrays;
 
 public class Square {
     private final boolean[] invalid;
     private int value;
 
 
-    // Constructor
+    // Constructors
     public Square(int size) {
         invalid = new boolean[size*size];
         value = 0;
+    }
+
+    public Square(int value, boolean[] invalid) {
+        this.invalid = Arrays.copyOf(invalid, invalid.length);
+        this.value = value;
     }
 
 
@@ -44,6 +52,11 @@ public class Square {
 
 
     // Helper methods
+    public Square copy() {
+        // make new Square characteristics same as old one
+        return new Square(value, invalid);
+    }
+
     public static Square[][] intsToSquares(int[][] intGrid) {
         int size = (int) Math.sqrt(intGrid.length);
         Square[][] newSquareGrid = new Square[size*size][size*size];
