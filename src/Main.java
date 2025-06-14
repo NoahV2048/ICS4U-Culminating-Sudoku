@@ -15,7 +15,7 @@ public class Main {
     static SwingPuzzle swingPuzzle;
 
     public static void main(String[] args) {
-        swingPuzzle = new SwingPuzzle(3); // you can change SIZE to be any natural number! (but gets exponentially slower)
+        swingPuzzle = new SwingPuzzle(3); // you can change size to be any natural number (but gets exponentially slower, so 5+ is not recommended)
         SudokuSolver.setSolutionLimit(1000); // dangerous to put this very high
     }
 }

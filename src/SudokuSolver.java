@@ -50,6 +50,7 @@ public class SudokuSolver {
     // Setter method for easier manipulation in Main
     public static void setSolutionLimit(int lim) {
         puzzleLimit = lim;
+        if (puzzleLimit < 1) puzzleLimit = 1; // min limit of 1
     }
 
 

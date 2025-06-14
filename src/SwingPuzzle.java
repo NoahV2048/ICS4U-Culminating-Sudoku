@@ -28,6 +28,8 @@ public class SwingPuzzle extends JFrame {
 
     // Constructor
     public SwingPuzzle(int size) {
+        if (size < 1) size = 3; // prevent error
+
         this.size = size;
         int realPuzzleSize = windowSize + (size-2) * (windowSize /100) + (size*size-2);
 
