@@ -341,7 +341,8 @@ public class SwingPuzzle extends JFrame {
         // use PrintWriter
         try (PrintWriter writer = new PrintWriter(fileName))  {
             writer.println("=== Sudoku Solutions ===");
-            writer.println("Number of solutions: " + solutions.size());
+            writer.println("Number of solutions: " + solutions.size() +
+                    (SudokuSolver.getPuzzleLimitActive() ? String.format(" (capped at %d)", SudokuSolver.getPuzzleLimit()) : " (uncapped)"));
             writer.println("Generated on: " + now + "\n\n");
 
             for (Puzzle solution : solutions) {
