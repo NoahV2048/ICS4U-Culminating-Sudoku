@@ -2,8 +2,6 @@ package src;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.io.FileNotFoundException;
 import java.io.PrintWriter;
 import java.time.LocalDateTime;
@@ -17,11 +15,12 @@ public class SwingPuzzle extends JFrame {
     int size;
     int displayedSolutionIndex = -1;
     boolean outputAsNewFile = false; // hardcoded so toggle here (changes file output)
-    JLabel solutionNumber;
+    JLabel adaptiveText;
+    JLabel adaptiveTextLower;
     ArrayList<Puzzle> solutions;
 
     // display settings
-    int windowSize = 500;
+    int puzzleSize = 500;
     int displayRatio = 10;
     public SwingSquare[][] squareValues;
 
@@ -31,32 +30,49 @@ public class SwingPuzzle extends JFrame {
         if (size < 1) size = 3; // prevent error
 
         this.size = size;
-        int realPuzzleSize = windowSize + (size-2) * (windowSize /100) + (size*size-2);
+        int realPuzzleSize = puzzleSize;
+
 
         // FRAME CONFIGURATION
         setTitle("Sudoku Solver");
-        setSize(realPuzzleSize, realPuzzleSize * (displayRatio+2)/displayRatio);
+        setSize(realPuzzleSize, 5 + realPuzzleSize * (displayRatio+2)/displayRatio);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        getRootPane().setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+        setLayout(new BorderLayout(0, 5));
         setResizable(false); // can be toggled
 
 
-        // TOP CONFIGURATION
-        JPanel topPanel = new JPanel();
-        topPanel.setBounds(0, 0, realPuzzleSize, realPuzzleSize/displayRatio);
-        add(topPanel);
+        // BUTTON PANEL CONFIGURATION
+        JPanel buttonPanel = new JPanel();
+        add(buttonPanel, BorderLayout.SOUTH);
+        buttonPanel.setLayout(new GridLayout(2, 1, 0, 2));
+        buttonPanel.setPreferredSize(new Dimension(puzzleSize/displayRatio, puzzleSize/displayRatio));
+
+        JPanel buttonPanel1 = new JPanel(), buttonPanel2 = new JPanel();
+
+        for (JPanel panel : new JPanel[] {buttonPanel1, buttonPanel2}) {
+            buttonPanel.add(panel);
+            panel.setLayout(new GridLayout(1, 2, 2, 0));
+        }
 
 
-        // PUZZLE CONFIGURATION
+        // TEXT PANEL CONFIGURATION
+        JPanel textPanel = new JPanel();
+        add(textPanel, BorderLayout.NORTH);
+        textPanel.setLayout(new BoxLayout(textPanel, BoxLayout.PAGE_AXIS)); // set alignment to page axis
+        textPanel.setPreferredSize(new Dimension(puzzleSize/displayRatio, puzzleSize/displayRatio));
 
-        // make layouts
-        GridLayout macroLayout = new GridLayout(size, size, windowSize /100, windowSize /100); // macro
+
+        // PUZZLE PANEL CONFIGURATION
+
+        // make grid layouts
+        GridLayout macroLayout = new GridLayout(size, size, puzzleSize/50, puzzleSize/50); // macro
         GridLayout microLayout = new GridLayout(size, size, 1, 1); // micro
 
         // create panel for the whole puzzle
         JPanel puzzlePanel = new JPanel();
-        add(puzzlePanel);
+        add(puzzlePanel, BorderLayout.CENTER);
         puzzlePanel.setLayout(macroLayout); // grid layout
-        puzzlePanel.setBounds(0, realPuzzleSize/displayRatio, windowSize, windowSize);
 
         // create smaller panels inside the main puzzle panel
         JPanel[][] boxPanels = new JPanel[size][size];
@@ -65,7 +81,6 @@ public class SwingPuzzle extends JFrame {
                 // create smaller panels
                 JPanel boxPanel = new JPanel();
                 boxPanel.setLayout(microLayout); // micro grid layout
-                boxPanel.setSize(windowSize /(size*size), windowSize /(size*size));
                 puzzlePanel.add(boxPanel); // add each smaller panel to the larger one
                 boxPanels[macroRow][macroCol] = boxPanel;
             }
@@ -88,68 +103,90 @@ public class SwingPuzzle extends JFrame {
         }
 
 
-        // BOTTOM CONFIGURATION
-        JPanel bottomPanel = new JPanel();
-        bottomPanel.setBounds(0, windowSize * (displayRatio+1)/displayRatio, windowSize, windowSize /(2*displayRatio));
-        add(bottomPanel);
+        // TEXT CONFIGURATION
+        adaptiveText = new JLabel("Please Enter a Sudoku Puzzle to Solve");
+        adaptiveText.setFont(new Font("Dialog", Font.BOLD, 18));
+        textPanel.add(adaptiveText); // add to text panel
+        adaptiveText.setAlignmentX(CENTER_ALIGNMENT); // center align
 
-        // add SOLVE button
+        adaptiveTextLower = new JLabel();
+        adaptiveTextLower.setFont(new Font("Dialog", Font.PLAIN, 12));
+        textPanel.add(adaptiveTextLower); // add to text panel
+        adaptiveTextLower.setAlignmentX(CENTER_ALIGNMENT); // center align
+
+
+        // BUTTON CONFIGURATIONS
+        Dimension buttonSize = new Dimension(50, puzzleSize/(3*displayRatio));
+
+        // add SOLVE and UNSOLVE button
         JButton solveButton = new JButton("SOLVE");
-        topPanel.add(solveButton); // add to top
+        solveButton.setPreferredSize(buttonSize);
+        buttonPanel1.add(solveButton); // add to button panel
 
-        solveButton.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent event) {
-                // solve
-                solve();
+        solveButton.addActionListener(_ -> {
+            // SOLVE
+            if (solveButton.getText().equals("SOLVE")) {
+                adaptiveText.setText("Solving...");
+
+                // new anonymous ActionListener for a timer with no delay
+                Timer timer = new Timer(0 , _ -> {
+                    solve();
+                    solveButton.setText("UNSOLVE");
+                });
+                timer.setRepeats(false);
+                timer.start();
             }
-        } );
+
+            // UNSOLVE
+            else {
+                unsolve();
+                solveButton.setText("SOLVE");
+            }
+        });
+
 
         // add RESET button
         JButton resetButton = new JButton("RESET");
-        topPanel.add(resetButton); // add to top
-        resetButton.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent event) {
-                // reset
-                reset();
-            }
-        } );
+        resetButton.setPreferredSize(buttonSize);
+        buttonPanel1.add(resetButton); // add to button panel
+
+        resetButton.addActionListener(_ -> {
+            reset();
+            solveButton.setText("SOLVE");
+        });
 
 
-        // add other nav buttons
+        // add PREV and NEXT buttons for navigation
         JButton prevButton = new JButton("PREV");
-        topPanel.add(prevButton); // add to top
+        prevButton.setPreferredSize(buttonSize);
+        buttonPanel2.add(prevButton); // add to button panel
+
         JButton nextButton = new JButton("NEXT");
-        topPanel.add(nextButton); // add to top
+        nextButton.setPreferredSize(buttonSize);
+        buttonPanel2.add(nextButton); // add to button panel
 
-        prevButton.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent event) {
-                // try decrementing
-                displayedSolutionIndex--;
+        prevButton.addActionListener(_ -> {
+            // try decrementing
+            displayedSolutionIndex--;
 
-                try {
-                    updateSolutionDisplay();
-                } catch (Exception e) {
-                    displayedSolutionIndex++;
-                }
-            }
-        } );
-
-        nextButton.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent event) {
-                // try incrementing
+            try {
+                updateSolutionDisplay();
+            } catch (Exception e) {
                 displayedSolutionIndex++;
-
-                try {
-                    updateSolutionDisplay();
-                } catch (Exception e) {
-                    displayedSolutionIndex--;
-                }
             }
-        } );
+        });
 
-        // add counter for solution number
-        solutionNumber = new JLabel();
-        topPanel.add(solutionNumber);
+        nextButton.addActionListener(_ -> {
+            // try incrementing
+            displayedSolutionIndex++;
+
+            try {
+                updateSolutionDisplay();
+            } catch (Exception e) {
+                displayedSolutionIndex--;
+            }
+        });
+
 
         // finally, set the frame visible
         setVisible(true);
@@ -186,8 +223,22 @@ public class SwingPuzzle extends JFrame {
         // iterate through squares
         for (int row = 0; row < size*size; row++) {
             for (int col = 0; col < size*size; col++) {
-                Square square = grid[row][col];
-                squareValues[row][col].setText("" + ((square.getValue() == 0) ? "" : square.getValue())); // rewrite the value of the square
+                SwingSquare swingSquare = squareValues[row][col];
+
+                // if the value is bold, do not update it
+                if (!swingSquare.isBold()) {
+                    Square square = grid[row][col];
+                    swingSquare.setText("" + ((square.getValue() == 0) ? "" : square.getValue())); // rewrite the value of the square
+                }
+            }
+        }
+    }
+
+    private void resetArray() {
+        // iterate through squares
+        for (int row = 0; row < size*size; row++) {
+            for (int col = 0; col < size*size; col++) {
+                squareValues[row][col].reset(); // reset the value of the swingSquare
             }
         }
     }
@@ -196,12 +247,23 @@ public class SwingPuzzle extends JFrame {
     // Helpers
     private void updateSolutionDisplay() {
         updateArray(solutions.get(displayedSolutionIndex));
-        solutionNumber.setText("Solution " + (displayedSolutionIndex+1) + "/" + solutions.size());
+        adaptiveText.setText("Displaying Solution " + (displayedSolutionIndex+1) + "/" + solutions.size());
+        adaptiveTextLower.setText(String.format("Random Puzzles: %s    Puzzle Limit: %s",
+                SudokuSolver.getRandomSolutionsActive() ? "Active" : "Inactive",
+                SudokuSolver.getPuzzleLimitActive() ? SudokuSolver.getPuzzleLimit() : "Inactive"));
     }
 
     private void reset() {
+        resetArray();
+        adaptiveText.setText("Please Enter a Sudoku Puzzle to Solve");
+        adaptiveTextLower.setText("");
+        displayedSolutionIndex = -2;
+    }
+
+    private void unsolve() {
         updateArray(new Puzzle(size));
-        solutionNumber.setText("");
+        adaptiveText.setText("Please Enter a Sudoku Puzzle to Solve");
+        adaptiveTextLower.setText("");
     }
 
     private void solve() {
@@ -220,9 +282,9 @@ public class SwingPuzzle extends JFrame {
         solver.recurSolve(sud);
         long timeEnd = System.currentTimeMillis();
 
-        // print stats
-        System.out.println("Recursion limit: " + (solver.getRecursionLimitActive() ? solver.getRecursionLimit() : "no limit"));
-        System.out.println("Solution limit: " + (solver.getPuzzleLimitActive() ? solver.getPuzzleLimit() : "no limit"));
+        // print stats (only in terminal)
+        System.out.println("Recursion limit: " + (SudokuSolver.getRecursionLimitActive() ? SudokuSolver.getRecursionLimit() : "no limit"));
+        System.out.println("Solution limit: " + (SudokuSolver.getPuzzleLimitActive() ? SudokuSolver.getPuzzleLimit() : "no limit"));
         System.out.printf("Time elapsed: %.3f seconds%n", (timeEnd - (double) timeStart) / 1000);
         System.out.println("Max recursive depth: " + solver.getMaxRecursion());
 
@@ -233,6 +295,7 @@ public class SwingPuzzle extends JFrame {
         // return if no solutions were found
         if (solutions.isEmpty()) {
             displayedSolutionIndex = -1;
+            adaptiveText.setText("NO SOLUTIONS FOUND");
             return;
         }
 

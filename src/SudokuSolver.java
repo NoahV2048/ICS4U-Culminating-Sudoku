@@ -6,11 +6,12 @@ public class SudokuSolver {
     private ArrayList<Puzzle> solutions;
     private int maxRecursion;
 
-    // hardcoded settings
+    // hardcoded static settings
     private static final int recursionLimit = 1;
     private static final boolean recursionLimitActive = false;
     private static int puzzleLimit = 10;
-    private static final boolean puzzleLimitActive = true;
+    private static boolean puzzleLimitActive = true;
+    private static boolean randomSolutions = false;
 
 
     // Constructor method
@@ -30,41 +31,60 @@ public class SudokuSolver {
 
 
     // Getter methods just for settings
-    public boolean getPuzzleLimitActive() {
+    public static boolean getPuzzleLimitActive() {
         return puzzleLimitActive;
     }
 
-    public int getPuzzleLimit() {
+    public static int getPuzzleLimit() {
         return puzzleLimit;
     }
 
-    public boolean getRecursionLimitActive() {
+    public static boolean getRecursionLimitActive() {
         return recursionLimitActive;
     }
 
-    public int getRecursionLimit() {
+    public static int getRecursionLimit() {
         return recursionLimit;
     }
 
+    public static boolean getRandomSolutionsActive() {
+        return randomSolutions;
+    }
 
-    // Setter method for easier manipulation in Main
+
+    // Setter methods for easier manipulation in Main
     public static void setSolutionLimit(int lim) {
         puzzleLimit = lim;
         if (puzzleLimit < 1) puzzleLimit = 1; // min limit of 1
     }
 
+    public static void setPuzzleLimitActive(boolean bool) {
+        puzzleLimitActive = bool;
+    }
+
+    public static void setRandomSolutions(boolean bool) {
+        randomSolutions = bool;
+    }
+
 
     // Misc helper methods
     private void addSolution(Puzzle puzzle) {
-        boolean addNew = true;
+        boolean alreadyFound = false;
 
-        for (Puzzle solution : solutions) {
-            if (puzzle.equals(solution)) { // if the solution is already found, don't add it
-                addNew = false;
-                break;
+        // not necessary to check previously found solutions if they are sorted
+        // but must be done for random solutions
+        if (randomSolutions) {
+            for (Puzzle solution : solutions) {
+                if (puzzle.equals(solution)) { // if the solution is already found, don't add it
+                    alreadyFound = true;
+                    break;
+                }
             }
+
         }
-        if (addNew) solutions.add(puzzle);
+
+        // add solution if not found already
+        if (!alreadyFound) solutions.add(puzzle);
     }
 
 
@@ -76,7 +96,20 @@ public class SudokuSolver {
         solutions = new ArrayList<>();
         maxRecursion = 0;
 
-        recurSolve(puzzle.copy(), 0); // create copy to avoid overriding
+        // randomSolutions == true, recurSolve must be called multiple times
+        if (randomSolutions) {
+            if (!puzzleLimitActive) throw new Error("RANDOM SOLUTIONS AND PUZZLE LIMIT ARE INCOMPATIBLE");
+
+            // since this step is random it is a bit wacky
+            double iterationsMultiplier = Math.E; // larger doubles work more effectively, but this is random chance
+            for (int iterations = 0; iterations < (int) (iterationsMultiplier * puzzleLimit); iterations++) {
+                recurSolve(puzzle.copy(), 0);
+                if (solutions.size() >= puzzleLimit) break;
+            }
+        }
+
+        // for sorted solutions, one call will do
+        else recurSolve(puzzle.copy(), 0); // create puzzle copy to avoid overriding
     }
 
     private void recurSolve(Puzzle puzzle, int depth) {
@@ -101,24 +134,53 @@ public class SudokuSolver {
             int size = puzzle.getSize();
             Square[][] grid = puzzle.getGrid();
 
+            ArrayList<int[]> possibleSquares = new ArrayList<>(); // only used if randomSolutions == true
+
             // iterate through each square in the grid
             for (int row = 0; row < size*size; row++) {
                 for (int col = 0; col < size*size; col++) {
                     Square square = grid[row][col];
 
-                    // but only operate on the first Square that has multiple possibilities
+                    // differentiate random solutions vs sorted solutions
                     if (square.getValue() == 0) {
-                        // try every possible value of the square
-                        for (int i : square.getValid()) {
-                            Puzzle newPuzzle = puzzle.copy();
-                            newPuzzle.getGrid()[row][col].setValue(i); // assume a square is filled in as one possible value and continue from there
+                        // SORTED SOLUTIONS
+                        if (!randomSolutions) {
+                            // only operate on the first Square that has multiple possibilities
+                            // try every valid value of the square
+                            for (int i : square.getValid()) {
+                                Puzzle newPuzzle = puzzle.copy();
+                                newPuzzle.getGrid()[row][col].setValue(i); // assume a square is filled in as one possible value and continue from there
 
-                            // recursive call
-                            recurSolve(newPuzzle, depth + 1); // keep track of recursion depth and increment
+                                // recursive call
+                                recurSolve(newPuzzle, depth + 1); // keep track of recursion depth and increment
+                            }
+                            return; // magic return statement
                         }
-                        return; // magic return statement
+
+                        // RANDOM SOLUTIONS
+                        else {
+                            possibleSquares.add(new int[] {row, col});
+                        }
                     }
                 }
+            }
+
+            // RANDOM SOLUTIONS
+            if (randomSolutions && !possibleSquares.isEmpty()) {
+                // make a random choice for the square
+                int randomIndex = (int) (Math.random() * possibleSquares.size());
+                int row = possibleSquares.get(randomIndex)[0], col = possibleSquares.get(randomIndex)[1];
+
+                // make a random choice for the square's value
+                ArrayList<Integer> possibleValues = grid[row][col].getValid();
+                int randomValue = possibleValues.get((int) (Math.random() * possibleValues.size()));
+
+                // now assume that both random choices were made
+                Puzzle newPuzzle = puzzle.copy();
+                newPuzzle.getGrid()[row][col].setValue(randomValue);
+
+                // recursive call
+                recurSolve(newPuzzle, depth + 1); // keep track of recursion depth and increment
             }
         }
     }
