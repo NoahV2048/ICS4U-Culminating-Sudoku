@@ -5,7 +5,7 @@
  * Loosely based on this site: https://sudokuspoiler.com/sudoku/sudoku9
  *
  * @author  Noah Verdon
- * @version 1.1
+ * @version 1.2
  * @since   2025-06-13
  */
 
@@ -17,7 +17,7 @@ public class Main {
     public static void main(String[] args) {
         swingPuzzle = new SwingPuzzle(3); // you can change size to be any natural number (but gets exponentially slower, so 5+ is not recommended)
         SudokuSolver.setSolutionLimit(20); // dangerous to put this very high
-        SudokuSolver.setRandomSolutions(false); // works better for larger puzzle limits, does not work well above 9*9 grids
+        SudokuSolver.setRandomSolutions(false); // works better for larger puzzle limits, does not work well above 9x9 grids
         SudokuSolver.setPuzzleLimitActive(true); // dangerous to set false
     }
 }

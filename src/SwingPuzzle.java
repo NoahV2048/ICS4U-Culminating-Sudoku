@@ -27,7 +27,7 @@ public class SwingPuzzle extends JFrame {
 
     // Constructor
     public SwingPuzzle(int size) {
-        if (size < 1) size = 3; // prevent error
+        if (size <= 1) size = 3; // prevent error, and 1x1 grid makes no sense
 
         this.size = size;
         int realPuzzleSize = puzzleSize;
@@ -225,7 +225,17 @@ public class SwingPuzzle extends JFrame {
             for (int col = 0; col < size*size; col++) {
                 SwingSquare swingSquare = squareValues[row][col];
 
-                // if the value is bold, do not update it
+                // if a bold square is empty, set it plain
+                if (swingSquare.isBold()) {
+                    try {
+                        swingSquare.getInt();
+                    }
+                    catch (Exception e) {
+                        swingSquare.reset(); // if an int can't be retrieved, the bold cell is empty
+                    }
+                }
+
+                // if the value is bold and filled in, do not update it
                 if (!swingSquare.isBold()) {
                     Square square = grid[row][col];
                     swingSquare.setText("" + ((square.getValue() == 0) ? "" : square.getValue())); // rewrite the value of the square
@@ -245,6 +255,17 @@ public class SwingPuzzle extends JFrame {
 
 
     // Helpers
+    private void setMutable(boolean bool) {
+        for (int row = 0; row < size*size; row++) {
+            for (int col = 0; col < size*size; col++) {
+                SwingSquare swingSquare = squareValues[row][col];
+                Font font = swingSquare.getFont();
+                swingSquare.setEditable(bool); // make all Squares mutable or not
+                swingSquare.setFont(font); // this prevents fonts being reset in the method call above
+            }
+        }
+    }
+
     private void updateSolutionDisplay() {
         updateArray(solutions.get(displayedSolutionIndex));
         adaptiveText.setText("Displaying Solution " + (displayedSolutionIndex+1) + "/" + solutions.size());
@@ -258,12 +279,14 @@ public class SwingPuzzle extends JFrame {
         adaptiveText.setText("Please Enter a Sudoku Puzzle to Solve");
         adaptiveTextLower.setText("");
         displayedSolutionIndex = -2;
+        setMutable(true);
     }
 
     private void unsolve() {
         updateArray(new Puzzle(size));
         adaptiveText.setText("Please Enter a Sudoku Puzzle to Solve");
         adaptiveTextLower.setText("");
+        setMutable(true);
     }
 
     private void solve() {
@@ -287,6 +310,9 @@ public class SwingPuzzle extends JFrame {
         System.out.println("Solution limit: " + (SudokuSolver.getPuzzleLimitActive() ? SudokuSolver.getPuzzleLimit() : "no limit"));
         System.out.printf("Time elapsed: %.3f seconds%n", (timeEnd - (double) timeStart) / 1000);
         System.out.println("Max recursive depth: " + solver.getMaxRecursion());
+
+        // make SwingSquares immutable
+        setMutable(false);
 
         // see if any solutions were found
         solutions = solver.getSolutions();

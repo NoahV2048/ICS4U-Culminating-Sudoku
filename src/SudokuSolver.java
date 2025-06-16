@@ -324,6 +324,13 @@ public class SudokuSolver {
                         actionTaken = true;
                     }
                 }
+
+                // there are no spots in a row/col/box for a number, the puzzle is invalid
+                if (rowCheck.isEmpty() || colCheck.isEmpty() || boxCheck.isEmpty()) {
+                    grid[0][0].setValue(1);
+                    grid[0][1].setValue(1);
+                    actionTaken = true;
+                }
             }
         }
         return actionTaken; // return whether this method changed anything
